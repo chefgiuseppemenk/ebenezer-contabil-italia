@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/auth";
+import { insertMovement } from "@/lib/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader as Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface MovementFormProps {
   onSuccess: () => void;
@@ -50,20 +51,19 @@ export const MovementForm = ({ onSuccess }: MovementFormProps) => {
     setLoading(true);
 
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Utente non autenticato");
+      const user = getCurrentUser();
+      if (!user) throw new Error("Utente non autenticato");
 
-      const { error } = await supabase.from("movimenti").insert([{
-        user_id: userData.user.id,
+      await insertMovement({
+        id: crypto.randomUUID(),
+        user_id: user.id,
         tipo,
         settore,
         metodo_pagamento: metodoPagamento,
         descrizione,
         importo: parseFloat(importo),
         categoria,
-      }] as any);
-
-      if (error) throw error;
+      });
 
       toast({
         title: "Movimento aggiunto",

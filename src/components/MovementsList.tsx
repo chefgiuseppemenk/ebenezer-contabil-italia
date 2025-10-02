@@ -1,7 +1,8 @@
 import { CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/auth";
+import { deleteMovement } from "@/lib/database";
 import { useToast } from "@/hooks/use-toast";
 import { Movement, CATEGORY_LABELS, SETTORE_LABELS, METODO_LABELS } from "@/types/movement";
 
@@ -15,8 +16,10 @@ export const MovementsList = ({ movements, onUpdate }: MovementsListProps) => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("movimenti").delete().eq("id", id);
-      if (error) throw error;
+      const user = getCurrentUser();
+      if (!user) throw new Error("Utente non autenticato");
+
+      await deleteMovement(id, user.id);
 
       toast({
         title: "Movimento eliminato",

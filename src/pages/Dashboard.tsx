@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser, signOut, onAuthStateChange } from "@/lib/auth";
+import { getMovements, initDatabase } from "@/lib/database";
 import { Button } from "@/components/ui/button";
 import { FinanceStats } from "@/components/FinanceStats";
 import { MovementForm } from "@/components/MovementForm";
@@ -8,46 +9,39 @@ import { MovementsList } from "@/components/MovementsList";
 import { CategoryChart } from "@/components/CategoryChart";
 import { ExportButtons } from "@/components/ExportButtons";
 import { LogOut, DollarSign } from "lucide-react";
-import { Session } from "@supabase/supabase-js";
 import { Movement } from "@/types/movement";
 
 const Dashboard = () => {
-  const [session, setSession] = useState<Session | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        if (!session) {
-          navigate("/auth");
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
+    initDatabase().then(() => {
+      const user = getCurrentUser();
+      if (!user) {
         navigate("/auth");
       } else {
         fetchMovements();
       }
     });
 
-    return () => subscription.unsubscribe();
+    const unsubscribe = onAuthStateChange((user) => {
+      if (!user) {
+        navigate("/auth");
+      }
+    });
+
+    return unsubscribe;
   }, [navigate]);
 
   const fetchMovements = async () => {
     try {
-      const { data, error } = await supabase
-        .from("movimenti")
-        .select("*")
-        .order("data", { ascending: false });
+      const user = getCurrentUser();
+      if (!user) return;
 
-      if (error) throw error;
-      setMovements(data || []);
+      const data = await getMovements(user.id);
+      setMovements(data as Movement[]);
     } catch (error) {
       console.error("Error fetching movements:", error);
     } finally {
@@ -56,7 +50,7 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    signOut();
     navigate("/auth");
   };
 
@@ -70,7 +64,7 @@ const Dashboard = () => {
 
   const saldo = totalEntrate - totalUscite;
 
-  if (!session || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Caricamento...</div>
