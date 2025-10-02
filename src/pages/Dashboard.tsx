@@ -9,15 +9,7 @@ import { CategoryChart } from "@/components/CategoryChart";
 import { ExportButtons } from "@/components/ExportButtons";
 import { LogOut, DollarSign } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
-
-interface Movement {
-  id: string;
-  tipo: "entrata" | "uscita";
-  descrizione: string;
-  importo: number;
-  categoria: string;
-  data: string;
-}
+import { Movement } from "@/types/movement";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);

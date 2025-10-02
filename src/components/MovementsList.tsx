@@ -3,31 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface Movement {
-  id: string;
-  tipo: "entrata" | "uscita";
-  descrizione: string;
-  importo: number;
-  categoria: string;
-  data: string;
-}
+import { Movement, CATEGORY_LABELS, SETTORE_LABELS, METODO_LABELS } from "@/types/movement";
 
 interface MovementsListProps {
   movements: Movement[];
   onUpdate: () => void;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  donazioni: "Donazioni",
-  affitto: "Affitto",
-  utenze: "Utenze",
-  stipendi: "Stipendi",
-  forniture: "Forniture",
-  manutenzione: "Manutenzione",
-  eventi: "Eventi",
-  altro: "Altro",
-};
 
 export const MovementsList = ({ movements, onUpdate }: MovementsListProps) => {
   const { toast } = useToast();
@@ -77,7 +58,10 @@ export const MovementsList = ({ movements, onUpdate }: MovementsListProps) => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{movement.descrizione}</p>
                     <p className="text-sm text-muted-foreground">
-                      {CATEGORY_LABELS[movement.categoria]} • {new Date(movement.data).toLocaleDateString("it-IT")}
+                      {SETTORE_LABELS[movement.settore]} • {METODO_LABELS[movement.metodo_pagamento]} • {CATEGORY_LABELS[movement.categoria]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(movement.data).toLocaleDateString("it-IT")}
                     </p>
                   </div>
                   <div className="text-right">
